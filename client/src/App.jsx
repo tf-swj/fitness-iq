@@ -4,7 +4,11 @@ import Dashboard from './components/Dashboard';
 import AICoach from './components/AICoach';
 import './App.css';
 
-const TABS = ['Dashboard', 'Log Workout', 'AI Coach'];
+const TABS = [
+  { id: 'Dashboard', label: '📊 Dashboard' },
+  { id: 'Log Workout', label: '➕ Log Workout' },
+  { id: 'AI Coach', label: '🤖 AI Coach' },
+];
 
 export default function App() {
   const [tab, setTab] = useState('Dashboard');
@@ -18,15 +22,18 @@ export default function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <div className="logo">FitnessIQ</div>
+        <div className="logo">
+          <div className="logo-icon">💪</div>
+          FitnessIQ
+        </div>
         <nav className="tabs">
           {TABS.map(t => (
             <button
-              key={t}
-              className={`tab-btn ${tab === t ? 'active' : ''}`}
-              onClick={() => setTab(t)}
+              key={t.id}
+              className={`tab-btn ${tab === t.id ? 'active' : ''}`}
+              onClick={() => setTab(t.id)}
             >
-              {t}
+              {t.label}
             </button>
           ))}
         </nav>
