@@ -1,39 +1,38 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #f5f5f7;
-  --surface: #ffffff;
-  --surface-2: #f9f9fb;
-  --border: #e8e8ed;
-  --text-primary: #1a1a2e;
-  --text-secondary: #6e6e80;
-  --text-muted: #a0a0b0;
-  --accent: #5b5ef4;
-  --accent-light: #ededfd;
-  --accent-hover: #4a4de0;
-  --green: #22c55e;
-  --green-light: #dcfce7;
-  --orange: #f97316;
-  --orange-light: #fff7ed;
-  --red: #ef4444;
-  --red-light: #fef2f2;
-  --blue: #3b82f6;
-  --blue-light: #eff6ff;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow: 0 4px 12px rgba(0,0,0,0.06), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 30px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04);
+  --navy-900: #0b1829;
+  --navy-800: #0f2035;
+  --navy-700: #162840;
+  --navy-600: #1e334e;
+  --navy-500: #253d5c;
+  --cyan: #00d4e8;
+  --cyan-dim: rgba(0, 212, 232, 0.15);
+  --cyan-border: rgba(0, 212, 232, 0.4);
+  --cyan-glow: 0 0 20px rgba(0, 212, 232, 0.2);
+  --text-primary: #e8f4f8;
+  --text-secondary: #7a9bb5;
+  --text-muted: #4a6a82;
+  --border: rgba(255,255,255,0.07);
+  --border-bright: rgba(255,255,255,0.12);
+  --surface: #132539;
+  --surface-2: #192f47;
+  --green: #00e07a;
+  --orange: #ff7d3b;
+  --red: #ff4d6a;
+  --shadow: 0 4px 20px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
   --radius: 14px;
-  --radius-sm: 8px;
-  --radius-xs: 6px;
+  --radius-sm: 10px;
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
-  background: var(--bg);
+  background: var(--navy-900);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -41,3 +40,7 @@ body {
 
 h1, h2, h3, h4 { color: var(--text-primary); font-weight: 600; }
 p { color: var(--text-secondary); }
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--navy-500); border-radius: 2px; }

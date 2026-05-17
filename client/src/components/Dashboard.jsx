@@ -1,31 +1,27 @@
 import { useEffect, useState } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell, CartesianGrid, Area, AreaChart,
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell, CartesianGrid,
 } from 'recharts';
 import { getEngineStats, getExercises, getExerciseHistory } from '../api';
 import { MUSCLE_COLORS } from '../data/exercises';
 
-const CustomTooltip = ({ active, payload, label }) => {
+const DarkTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: 'white', border: '1px solid #e8e8ed', borderRadius: 10, padding: '0.75rem 1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-      <div style={{ fontSize: '0.78rem', color: '#6e6e80', marginBottom: '0.3rem' }}>{label}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ fontWeight: 700, color: p.color || '#5b5ef4', fontSize: '0.95rem' }}>
-          {p.value} {p.name === 'e1rm' ? 'lbs e1RM' : 'lbs'}
-        </div>
-      ))}
+    <div style={{ background: '#0f2035', border: '1px solid rgba(0,212,232,0.3)', borderRadius: 10, padding: '0.65rem 1rem', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+      <div style={{ fontSize: '0.72rem', color: '#4a6a82', marginBottom: '0.2rem' }}>{label}</div>
+      <div style={{ fontWeight: 700, color: '#00d4e8', fontSize: '1rem' }}>{payload[0].value} lbs</div>
     </div>
   );
 };
 
-export default function Dashboard() {
-  const [engine, setEngine] = useState(null);
+export default function Dashboard({ onNavigate }) {
+  const [engine, setEngine]       = useState(null);
   const [exercises, setExercises] = useState([]);
   const [selectedEx, setSelectedEx] = useState(null);
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [history, setHistory]     = useState([]);
+  const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
     Promise.all([getEngineStats(), getExercises()])
@@ -43,12 +39,11 @@ export default function Dashboard() {
       const byDate = {};
       for (const row of r.data) {
         const e1rm = Math.round(row.weight_lbs * (1 + row.reps / 30) * 10) / 10;
-        if (!byDate[row.date] || e1rm > byDate[row.date].e1rm) {
+        if (!byDate[row.date] || e1rm > byDate[row.date].e1rm)
           byDate[row.date] = { date: row.date.slice(5), e1rm, weight: row.weight_lbs, reps: row.reps };
-        }
       }
       setHistory(Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date)));
-    }).catch(() => {});
+    });
   }, [selectedEx]);
 
   if (loading) return <div className="loading">Loading your stats...</div>;
@@ -58,41 +53,47 @@ export default function Dashboard() {
       <div className="empty-state">
         <div className="empty-icon">🏋️</div>
         <h3 style={{ color: 'var(--text-primary)', marginBottom: '0.5rem' }}>No workouts yet</h3>
-        <p>Head to <strong>Log Workout</strong> to record your first session and see your progress here.</p>
+        <p>Head to <strong style={{ color: 'var(--cyan)', cursor: 'pointer' }} onClick={() => onNavigate?.('Log Workout')}>Log Workout</strong> to record your first session.</p>
       </div>
     );
   }
 
-  const gainEntries = Object.entries(engine.gains || {});
-  const volumeData = Object.entries(engine.volume || {})
-    .map(([mg, vol]) => ({ mg, vol: Math.round(vol / 1000 * 10) / 10 }))
-    .sort((a, b) => b.vol - a.vol);
-  const bestGain = gainEntries.reduce((max, [, g]) => g.percentGain > (max?.percentGain ?? -Infinity) ? g : max, null);
-  const totalVolume = Object.values(engine.volume || {}).reduce((s, v) => s + v, 0);
+  const gainEntries   = Object.entries(engine.gains || {});
+  const volumeData    = Object.entries(engine.volume || {}).map(([mg, vol]) => ({ mg, vol: Math.round(vol / 1000 * 10) / 10 })).sort((a, b) => b.vol - a.vol);
+  const bestGain      = gainEntries.reduce((max, [, g]) => g.percentGain > (max?.percentGain ?? -Infinity) ? g : max, null);
+  const totalVolume   = Object.values(engine.volume || {}).reduce((s, v) => s + v, 0);
+  const histFirst     = history[0]?.e1rm;
+  const histLast      = history[history.length - 1]?.e1rm;
+  const histChange    = histFirst && histLast ? Math.round((histLast - histFirst) / histFirst * 1000) / 10 : null;
 
   return (
     <>
-      {/* Stats */}
+      {/* Stat Cards */}
       <div className="stat-grid">
-        <div className="stat-card accent">
-          <div className="stat-icon accent">📈</div>
-          <div className="stat-value">{exercises.length}</div>
+        <div className={`stat-card ${engine.plateaus?.length ? '' : 'active-stat'}`}>
+          <div className="stat-icon cyan">📈</div>
+          <div className="stat-value cyan">{exercises.length}</div>
           <div className="stat-label">Exercises Tracked</div>
         </div>
-        <div className="stat-card green">
+
+        <div className="stat-card">
           <div className="stat-icon green">🏆</div>
-          <div className="stat-value">{bestGain ? `+${bestGain.percentGain}%` : '—'}</div>
+          <div className="stat-value" style={{ color: 'var(--green)' }}>{bestGain ? `+${bestGain.percentGain}%` : '—'}</div>
           <div className="stat-label">Best Strength Gain</div>
         </div>
-        <div className="stat-card orange">
+
+        <div className="stat-card" style={engine.plateaus?.length ? { borderColor: 'rgba(255,125,59,0.35)' } : {}}>
           <div className="stat-icon orange">⚡</div>
-          <div className="stat-value">{engine.plateaus?.length || 0}</div>
+          <div className="stat-value" style={{ color: engine.plateaus?.length ? 'var(--orange)' : 'var(--text-primary)' }}>
+            {engine.plateaus?.length || 0}
+          </div>
           <div className="stat-label">Active Plateaus</div>
         </div>
-        <div className="stat-card blue">
-          <div className="stat-icon blue">🔥</div>
+
+        <div className="stat-card">
+          <div className="stat-icon red">🔥</div>
           <div className="stat-value">{totalVolume ? `${Math.round(totalVolume / 1000)}k` : '—'}</div>
-          <div className="stat-label">This Week's Volume (lbs)</div>
+          <div className="stat-label">This Week (lbs)</div>
         </div>
       </div>
 
@@ -100,155 +101,103 @@ export default function Dashboard() {
       {(engine.plateaus?.length > 0 || engine.deloadRecommended) && (
         <div className="card">
           <div className="card-header">
-            <h2>Attention Needed</h2>
+            <h2>Attention Required</h2>
+            <span className="badge badge-orange">{(engine.plateaus?.length || 0) + (engine.deloadRecommended ? 1 : 0)} Alert{(engine.plateaus?.length || 0) + (engine.deloadRecommended ? 1 : 0) > 1 ? 's' : ''}</span>
           </div>
           {engine.plateaus?.map((p, i) => (
             <div key={i} className="alert alert-warn">
-              <div style={{ fontSize: '1.2rem' }}>⚠️</div>
+              <span>⚠️</span>
               <div>
                 <div className="alert-title">{p.exercise} — Plateau Detected</div>
-                <div className="alert-body">Stalled at {p.currentE1RM} lbs e1RM for {p.weeks} consecutive weeks. Head to AI Coach for a personalized fix.</div>
+                <div className="alert-body">Stalled at {p.currentE1RM} lbs e1RM for {p.weeks} weeks. <span style={{ color: 'var(--cyan)', cursor: 'pointer' }} onClick={() => onNavigate?.('AI Coach')}>Get a fix from AI Coach →</span></div>
               </div>
             </div>
           ))}
           {engine.deloadRecommended && (
             <div className="alert alert-info">
-              <div style={{ fontSize: '1.2rem' }}>🔄</div>
+              <span>🔄</span>
               <div>
-                <div className="alert-title">Deload Recommended</div>
-                <div style={{ color: '#1d4ed8', fontSize: '0.85rem', marginTop: '0.1rem' }}>4+ weeks of continuous training. A deload week will boost recovery and help you come back stronger.</div>
+                <div className="alert-title">Deload Week Recommended</div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.1rem' }}>4+ weeks of continuous training. Reduce volume by 40% this week for supercompensation.</div>
               </div>
             </div>
           )}
         </div>
       )}
 
-      {/* Strength Curve */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <h2>Strength Curve</h2>
-            <div className="card-subtitle">Estimated 1RM over time</div>
-          </div>
-        </div>
+      {/* Two-column layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
 
-        <div className="muscle-tabs" style={{ marginBottom: '1.25rem' }}>
-          {exercises.map(ex => (
-            <button
-              key={ex.exercise_name}
-              type="button"
-              className={`muscle-tab ${selectedEx === ex.exercise_name ? 'active' : ''}`}
-              onClick={() => setSelectedEx(ex.exercise_name)}
-            >
-              {ex.exercise_name}
-            </button>
-          ))}
-        </div>
-
-        {history.length > 1 ? (
-          <>
-            {history.length > 1 && (
-              <div style={{ display: 'flex', gap: '2rem', marginBottom: '1rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Starting</div>
-                  <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{history[0].e1rm} lbs</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Current</div>
-                  <div style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--accent)' }}>{history[history.length - 1].e1rm} lbs</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Change</div>
-                  <div style={{ fontWeight: 700, fontSize: '1.1rem' }} className={history[history.length-1].e1rm >= history[0].e1rm ? 'gain-positive' : 'gain-negative'}>
-                    {history[history.length-1].e1rm >= history[0].e1rm ? '+' : ''}
-                    {Math.round((history[history.length-1].e1rm - history[0].e1rm) / history[0].e1rm * 1000) / 10}%
-                  </div>
-                </div>
-              </div>
+        {/* Strength Curve */}
+        <div className="card" style={{ margin: 0 }}>
+          <div className="card-header">
+            <div>
+              <h2>Strength Curve</h2>
+              <div className="card-subtitle">Estimated 1RM over time</div>
+            </div>
+            {histChange !== null && (
+              <span className={histChange >= 0 ? 'gain-positive' : 'gain-negative'} style={{ fontSize: '1rem' }}>
+                {histChange >= 0 ? '▲' : '▼'} {Math.abs(histChange)}%
+              </span>
             )}
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={history} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
+          </div>
+
+          <div className="muscle-tabs">
+            {exercises.map(ex => (
+              <button key={ex.exercise_name} type="button"
+                className={`muscle-tab ${selectedEx === ex.exercise_name ? 'active' : ''}`}
+                onClick={() => setSelectedEx(ex.exercise_name)}>
+                {ex.exercise_name}
+              </button>
+            ))}
+          </div>
+
+          {history.length > 1 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={history} margin={{ top: 5, right: 5, bottom: 0, left: 0 }}>
                 <defs>
-                  <linearGradient id="e1rmGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#5b5ef4" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#5b5ef4" stopOpacity={0} />
+                  <linearGradient id="cyanGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00d4e8" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#00d4e8" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f5" vertical={false} />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#a0a0b0' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#a0a0b0' }} width={55} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="e1rm" stroke="#5b5ef4" strokeWidth={2.5} fill="url(#e1rmGrad)" dot={{ r: 4, fill: '#5b5ef4', strokeWidth: 2, stroke: 'white' }} activeDot={{ r: 6 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#4a6a82' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#4a6a82' }} width={50} axisLine={false} tickLine={false} />
+                <Tooltip content={<DarkTooltip />} />
+                <Area type="monotone" dataKey="e1rm" stroke="#00d4e8" strokeWidth={2} fill="url(#cyanGrad)"
+                  dot={{ r: 4, fill: '#00d4e8', stroke: '#0b1829', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#00d4e8' }} />
               </AreaChart>
             </ResponsiveContainer>
-          </>
-        ) : (
-          <div className="empty-state" style={{ padding: '2rem' }}>Log 2+ sessions on this exercise to see the curve.</div>
-        )}
-      </div>
+          ) : (
+            <div className="empty-state" style={{ padding: '1.5rem' }}>Log 2+ sessions to see the curve.</div>
+          )}
+        </div>
 
-      {/* Volume + Gains side by side */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-        {/* Weekly Volume */}
-        {volumeData.length > 0 && (
-          <div className="card" style={{ margin: 0 }}>
-            <div className="card-header">
-              <div>
-                <h2>Weekly Volume</h2>
-                <div className="card-subtitle">This week, in thousands of lbs</div>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={volumeData} margin={{ top: 5, right: 5, bottom: 20, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f5" horizontal={true} vertical={false} />
-                <XAxis dataKey="mg" tick={{ fontSize: 10, fill: '#a0a0b0' }} angle={-30} textAnchor="end" axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#a0a0b0' }} width={35} axisLine={false} tickLine={false} />
-                <Tooltip content={({ active, payload, label }) => active && payload?.length ? (
-                  <div style={{ background: 'white', border: '1px solid #e8e8ed', borderRadius: 10, padding: '0.6rem 0.9rem', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                    <div style={{ fontSize: '0.78rem', color: '#6e6e80' }}>{label}</div>
-                    <div style={{ fontWeight: 700, color: '#1a1a2e' }}>{payload[0].value}k lbs</div>
-                  </div>
-                ) : null} />
-                <Bar dataKey="vol" radius={[6, 6, 0, 0]}>
-                  {volumeData.map((entry, i) => (
-                    <Cell key={i} fill={MUSCLE_COLORS[entry.mg] || '#5b5ef4'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* Strength Gains Table */}
+        {/* All-time Gains */}
         {gainEntries.length > 0 && (
           <div className="card" style={{ margin: 0 }}>
             <div className="card-header">
               <div>
                 <h2>All-Time Gains</h2>
-                <div className="card-subtitle">Estimated 1RM progress</div>
+                <div className="card-subtitle">e1RM progress</div>
               </div>
             </div>
             <div className="table-wrap">
               <table>
                 <thead>
-                  <tr>
-                    <th>Exercise</th>
-                    <th>e1RM</th>
-                    <th>Gain</th>
-                  </tr>
+                  <tr><th>Exercise</th><th>Change</th><th>%</th></tr>
                 </thead>
                 <tbody>
-                  {gainEntries
-                    .sort(([, a], [, b]) => b.percentGain - a.percentGain)
-                    .map(([ex, g]) => (
+                  {gainEntries.sort(([,a],[,b]) => b.percentGain - a.percentGain).map(([ex, g]) => (
                     <tr key={ex}>
-                      <td style={{ fontWeight: 500 }}>{ex}</td>
-                      <td style={{ color: 'var(--text-secondary)' }}>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{g.firstE1RM}→</span> {g.currentE1RM}
+                      <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{ex}</td>
+                      <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                        {g.firstE1RM}→<strong style={{ color: 'var(--text-secondary)' }}>{g.currentE1RM}</strong>
                       </td>
                       <td>
                         <span className={g.percentGain >= 0 ? 'gain-positive' : 'gain-negative'}>
-                          {g.percentGain >= 0 ? '▲' : '▼'} {Math.abs(g.percentGain)}%
+                          {g.percentGain >= 0 ? '+' : ''}{g.percentGain}%
                         </span>
                       </td>
                     </tr>
@@ -259,6 +208,36 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Volume */}
+      {volumeData.length > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <div>
+              <h2>Weekly Volume by Muscle Group</h2>
+              <div className="card-subtitle">This week — in thousands of lbs</div>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={volumeData} margin={{ top: 5, right: 10, bottom: 20, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+              <XAxis dataKey="mg" tick={{ fontSize: 10, fill: '#4a6a82' }} angle={-25} textAnchor="end" axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#4a6a82' }} width={35} axisLine={false} tickLine={false} />
+              <Tooltip content={({ active, payload, label }) => active && payload?.length ? (
+                <div style={{ background: '#0f2035', border: '1px solid rgba(0,212,232,0.3)', borderRadius: 8, padding: '0.6rem 0.9rem' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#4a6a82' }}>{label}</div>
+                  <div style={{ fontWeight: 700, color: '#00d4e8' }}>{payload[0].value}k lbs</div>
+                </div>
+              ) : null} />
+              <Bar dataKey="vol" radius={[6, 6, 0, 0]}>
+                {volumeData.map((entry, i) => (
+                  <Cell key={i} fill={MUSCLE_COLORS[entry.mg] || '#00d4e8'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </>
   );
 }
