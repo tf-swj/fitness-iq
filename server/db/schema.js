@@ -2,7 +2,6 @@ const Database = require('better-sqlite3');
 const path = require('path');
 
 const DB_PATH = path.join(__dirname, 'fitness.db');
-
 let db;
 
 function getDb() {
@@ -19,7 +18,12 @@ function initSchema() {
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
+      name TEXT,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      phone TEXT,
+      is_verified INTEGER DEFAULT 0,
+      verification_token TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );
 
@@ -42,8 +46,6 @@ function initSchema() {
       rpe INTEGER,
       created_at TEXT DEFAULT (datetime('now'))
     );
-
-    INSERT OR IGNORE INTO users (id, name) VALUES (1, 'Athlete');
   `);
 }
 

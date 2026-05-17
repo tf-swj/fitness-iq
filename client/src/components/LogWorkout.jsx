@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { logWorkout } from '../api';
-import { EXERCISE_DB, MUSCLE_GROUPS, MUSCLE_EMOJIS } from '../data/exercises';
+import { EXERCISE_DB, MUSCLE_GROUPS, MUSCLE_EMOJIS, searchExercises } from '../data/exercises';
 
 function emptySet(n) { return { set_number: n, reps: '', weight_lbs: '', rpe: '' }; }
-function emptyExercise() { return { exercise_name: '', muscle_group: 'Chest', sets: [emptySet(1)], showPicker: true }; }
+function emptyExercise() { return { exercise_name: '', muscle_group: 'Chest', sets: [emptySet(1)], showPicker: true, search: '' }; }
 
 export default function LogWorkout({ onLogged }) {
   const [date, setDate]           = useState(new Date().toISOString().slice(0, 10));
@@ -38,7 +38,7 @@ export default function LogWorkout({ onLogged }) {
 
   const pickExercise = (ei, name, muscle) =>
     setExercises(exs => exs.map((ex, i) =>
-      i === ei ? { ...ex, exercise_name: name, muscle_group: muscle, showPicker: false } : ex
+      i === ei ? { ...ex, exercise_name: name, muscle_group: muscle, showPicker: false, search: '' } : ex
     ));
 
   const addExercise = () => setExercises(exs => [...exs, emptyExercise()]);
@@ -67,7 +67,6 @@ export default function LogWorkout({ onLogged }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      {/* Session info */}
       <div className="card">
         <div className="card-header"><h2>Session Details</h2></div>
         <div className="form-row">
@@ -82,9 +81,10 @@ export default function LogWorkout({ onLogged }) {
         </div>
       </div>
 
-      {/* Exercises */}
       {exercises.map((ex, ei) => {
         const muscle = pickerMuscle[ei] || ex.muscle_group || 'Chest';
+        const searchResults = ex.search.trim() ? searchExercises(ex.search) : null;
+
         return (
           <div key={ei} className="exercise-block">
             <div className="exercise-block-header">
@@ -92,53 +92,91 @@ export default function LogWorkout({ onLogged }) {
                 <div className="exercise-number">{ei + 1}</div>
                 <div>
                   <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-                    {ex.exercise_name || <span style={{ color: 'var(--text-muted)' }}>Select an exercise below</span>}
+                    {ex.exercise_name || <span style={{ color: 'var(--text-muted)' }}>Select an exercise</span>}
                   </div>
                   {ex.exercise_name && <div style={{ fontSize: '0.72rem', color: 'var(--cyan)', marginTop: '0.1rem' }}>{ex.muscle_group}</div>}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="button" className="btn-secondary"
-                  onClick={() => updateExercise(ei, 'showPicker', !ex.showPicker)}>
+                <button type="button" className="btn-secondary" onClick={() => updateExercise(ei, 'showPicker', !ex.showPicker)}>
                   {ex.showPicker ? 'Collapse' : 'Change'}
                 </button>
                 {exercises.length > 1 && <button type="button" className="btn-danger" onClick={() => removeExercise(ei)}>Remove</button>}
               </div>
             </div>
 
-            {/* Picker */}
             {ex.showPicker && (
               <div className="picker-panel">
-                <div className="form-section-title">Muscle Group</div>
-                <div className="muscle-tabs">
-                  {MUSCLE_GROUPS.map(mg => (
-                    <button key={mg} type="button"
-                      className={`muscle-tab ${muscle === mg ? 'active' : ''}`}
-                      onClick={() => setPickerMuscle(p => ({ ...p, [ei]: mg }))}>
-                      {MUSCLE_EMOJIS[mg]} {mg}
-                    </button>
-                  ))}
+                {/* Search bar */}
+                <div className="form-group" style={{ marginBottom: '0.85rem' }}>
+                  <label>Search exercises</label>
+                  <input
+                    type="text"
+                    placeholder="Type to search 300+ exercises..."
+                    value={ex.search}
+                    onChange={e => updateExercise(ei, 'search', e.target.value)}
+                    autoComplete="off"
+                  />
                 </div>
-                <div className="form-section-title">Exercises</div>
-                <div className="ex-grid">
-                  {(EXERCISE_DB[muscle] || []).map(name => (
-                    <button key={name} type="button"
-                      className={`ex-chip ${ex.exercise_name === name ? 'selected' : ''}`}
-                      onClick={() => pickExercise(ei, name, muscle)}>
-                      {name}
-                    </button>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.25rem' }}>
+
+                {/* Search results */}
+                {searchResults ? (
+                  searchResults.length > 0 ? (
+                    <>
+                      <div className="form-section-title">Search Results</div>
+                      <div className="ex-grid">
+                        {searchResults.map(({ name, muscle: mg }) => (
+                          <button key={name} type="button"
+                            className={`ex-chip ${ex.exercise_name === name ? 'selected' : ''}`}
+                            onClick={() => pickExercise(ei, name, mg)}>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.1rem' }}>{mg}</span>
+                            {name}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', padding: '0.5rem 0 0.75rem' }}>
+                      No results. Try a different name or browse below.
+                    </div>
+                  )
+                ) : (
+                  <>
+                    {/* Muscle group tabs */}
+                    <div className="form-section-title">Browse by Muscle</div>
+                    <div className="muscle-tabs">
+                      {MUSCLE_GROUPS.map(mg => (
+                        <button key={mg} type="button"
+                          className={`muscle-tab ${muscle === mg ? 'active' : ''}`}
+                          onClick={() => setPickerMuscle(p => ({ ...p, [ei]: mg }))}>
+                          {MUSCLE_EMOJIS[mg]} {mg}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="form-section-title">Exercises</div>
+                    <div className="ex-grid">
+                      {(EXERCISE_DB[muscle] || []).map(name => (
+                        <button key={name} type="button"
+                          className={`ex-chip ${ex.exercise_name === name ? 'selected' : ''}`}
+                          onClick={() => pickExercise(ei, name, muscle)}>
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Custom name input */}
+                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.25rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', flexShrink: 0 }}>Custom:</span>
-                  <input type="text" style={{ maxWidth: 280 }} placeholder="Type exercise name..."
+                  <input type="text" style={{ maxWidth: 300 }} placeholder="Type any exercise name..."
                     value={ex.exercise_name}
                     onChange={e => updateExercise(ei, 'exercise_name', e.target.value)} />
                 </div>
               </div>
             )}
 
-            {/* Sets */}
+            {/* Sets table */}
             <div className="table-wrap">
               <table>
                 <thead>
@@ -147,7 +185,7 @@ export default function LogWorkout({ onLogged }) {
                 <tbody>
                   {ex.sets.map((s, si) => (
                     <tr key={si}>
-                      <td style={{ color: 'var(--cyan)', fontWeight: 700, fontSize: '0.85rem' }}>{s.set_number}</td>
+                      <td style={{ color: 'var(--cyan)', fontWeight: 700 }}>{s.set_number}</td>
                       <td><input type="number" className="set-input" min="1" value={s.reps} onChange={e => updateSet(ei, si, 'reps', e.target.value)} placeholder="8" /></td>
                       <td><input type="number" className="set-input" style={{ width: 95 }} min="0" step="2.5" value={s.weight_lbs} onChange={e => updateSet(ei, si, 'weight_lbs', e.target.value)} placeholder="135" /></td>
                       <td><input type="number" className="set-input" min="1" max="10" value={s.rpe} onChange={e => updateSet(ei, si, 'rpe', e.target.value)} placeholder="—" /></td>
@@ -157,9 +195,7 @@ export default function LogWorkout({ onLogged }) {
                 </tbody>
               </table>
             </div>
-            <button type="button" className="btn-ghost" style={{ marginTop: '0.75rem' }} onClick={() => addSet(ei)}>
-              + Add Set
-            </button>
+            <button type="button" className="btn-ghost" style={{ marginTop: '0.75rem' }} onClick={() => addSet(ei)}>+ Add Set</button>
           </div>
         );
       })}
