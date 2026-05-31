@@ -3,18 +3,21 @@ import AuthPage from './components/AuthPage';
 import Dashboard from './components/Dashboard';
 import LogWorkout from './components/LogWorkout';
 import AICoach from './components/AICoach';
+import Calendar from './components/Calendar';
 import Settings from './components/Settings';
 import './App.css';
 
 const NAV = [
   { id: 'Dashboard',   icon: '▦', label: 'Dashboard' },
   { id: 'Log Workout', icon: '+', label: 'Log Workout' },
+  { id: 'Calendar',    icon: '◫', label: 'Calendar' },
   { id: 'AI Coach',    icon: '◈', label: 'AI Coach' },
 ];
 
 const PAGE_META = {
   'Dashboard':   { title: 'Dashboard',    subtitle: 'Your training overview' },
   'Log Workout': { title: 'Log Workout',  subtitle: 'Record your session' },
+  'Calendar':    { title: 'Calendar',     subtitle: 'Plan your weekly split' },
   'AI Coach':    { title: 'AI Coach',     subtitle: 'Adaptive plan generator' },
   'Settings':    { title: 'Settings',     subtitle: 'Profile & preferences' },
 };
@@ -96,6 +99,7 @@ export default function App() {
           <div className="topbar-right">
             {tab === 'Dashboard'   && <span className="badge badge-green">● Live</span>}
             {tab === 'Log Workout' && <span className="badge badge-cyan">+ New Session</span>}
+            {tab === 'Calendar'    && <span className="badge badge-cyan">◫ Weekly Split</span>}
             {tab === 'AI Coach'    && <span className="badge badge-cyan">◈ AI Coach</span>}
             {tab === 'Settings'    && <span className="badge badge-cyan">⚙ Account</span>}
           </div>
@@ -104,6 +108,7 @@ export default function App() {
         <div className="page-content">
           {tab === 'Dashboard'   && <Dashboard key={refreshKey} onNavigate={setTab} />}
           {tab === 'Log Workout' && <LogWorkout onLogged={onWorkoutLogged} />}
+          {tab === 'Calendar'    && <Calendar />}
           {tab === 'AI Coach'    && <AICoach />}
           {tab === 'Settings'    && <Settings user={user} onUpdate={(updated) => {
             setUser(u => ({ ...u, ...updated }));

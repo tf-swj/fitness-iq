@@ -23,6 +23,11 @@ export const getEngineStats = () => api.get('/workouts/engine');
 export const getDailyBrief = () => api.get('/workouts/daily-brief');
 export const runAnalysis = () => api.post('/workouts/analyze');
 
+// Schedule
+export const getSchedule = () => api.get('/schedule');
+export const saveScheduleDay = (dayIndex, data) => api.put(`/schedule/${dayIndex}`, data);
+export const deleteScheduleDay = (dayIndex) => api.delete(`/schedule/${dayIndex}`);
+
 // Streaming chat — returns a ReadableStream
 export async function sendChatMessage(messages) {
   const token = localStorage.getItem('fiq_token');

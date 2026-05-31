@@ -39,18 +39,18 @@ function logWorkoutSession(userId, date, notes = '') {
 function logSets(sessionId, sets) {
   const db = getDb();
   const stmt = db.prepare(
-    `INSERT INTO exercise_sets (session_id, exercise_name, muscle_group, set_number, reps, weight_lbs, rpe)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO exercise_sets (session_id, exercise_name, muscle_group, set_number, reps, weight_lbs)
+     VALUES (?, ?, ?, ?, ?, ?)`
   );
   db.transaction((sets) => {
-    for (const s of sets) stmt.run(sessionId, s.exercise_name, s.muscle_group, s.set_number, s.reps, s.weight_lbs, s.rpe ?? null);
+    for (const s of sets) stmt.run(sessionId, s.exercise_name, s.muscle_group, s.set_number, s.reps, s.weight_lbs);
   })(sets);
 }
 
 function getSessionsForUser(userId, limitDays = 90) {
   return getDb().prepare(`
     SELECT ws.id, ws.date, ws.notes,
-           es.exercise_name, es.muscle_group, es.set_number, es.reps, es.weight_lbs, es.rpe
+           es.exercise_name, es.muscle_group, es.set_number, es.reps, es.weight_lbs
     FROM workout_sessions ws
     JOIN exercise_sets es ON es.session_id = ws.id
     WHERE ws.user_id = ? AND ws.date >= date('now', ? || ' days')
@@ -60,7 +60,7 @@ function getSessionsForUser(userId, limitDays = 90) {
 
 function getExerciseHistory(userId, exerciseName) {
   return getDb().prepare(`
-    SELECT ws.date, es.set_number, es.reps, es.weight_lbs, es.rpe
+    SELECT ws.date, es.set_number, es.reps, es.weight_lbs
     FROM exercise_sets es
     JOIN workout_sessions ws ON ws.id = es.session_id
     WHERE ws.user_id = ? AND LOWER(es.exercise_name) = LOWER(?)
@@ -84,7 +84,25 @@ function getAllExerciseNames(userId) {
   `).all(userId);
 }
 
+// ── Schedule ──
+function getSchedule(userId) {
+  return getDb().prepare('SELECT * FROM weekly_schedule WHERE user_id = ? ORDER BY day_index').all(userId);
+}
+
+function saveScheduleDay(userId, dayIndex, label, color, notes) {
+  getDb().prepare(`
+    INSERT INTO weekly_schedule (user_id, day_index, label, color, notes)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, day_index) DO UPDATE SET label=excluded.label, color=excluded.color, notes=excluded.notes
+  `).run(userId, dayIndex, label, color, notes || null);
+}
+
+function clearScheduleDay(userId, dayIndex) {
+  getDb().prepare('DELETE FROM weekly_schedule WHERE user_id = ? AND day_index = ?').run(userId, dayIndex);
+}
+
 module.exports = {
   createUser, getUserByEmail, getUserById, verifyUserEmail, updateUserProfile,
   logWorkoutSession, logSets, getSessionsForUser, getExerciseHistory, getRecentSessions, getAllExerciseNames,
+  getSchedule, saveScheduleDay, clearScheduleDay,
 };

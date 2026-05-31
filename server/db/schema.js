@@ -43,8 +43,17 @@ function initSchema() {
       set_number INTEGER NOT NULL,
       reps INTEGER NOT NULL,
       weight_lbs REAL NOT NULL,
-      rpe INTEGER,
       created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS weekly_schedule (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id),
+      day_index INTEGER NOT NULL,
+      label TEXT NOT NULL,
+      color TEXT DEFAULT '#00d4e8',
+      notes TEXT,
+      UNIQUE(user_id, day_index)
     );
   `);
 }

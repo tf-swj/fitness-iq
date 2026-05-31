@@ -11,6 +11,7 @@ getDb(); // init DB schema on startup
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/workouts', require('./routes/workouts'));
+app.use('/api/schedule', require('./routes/schedule'));
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 3001;

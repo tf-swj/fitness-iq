@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { logWorkout } from '../api';
 import { EXERCISE_DB, MUSCLE_GROUPS, MUSCLE_EMOJIS, searchExercises } from '../data/exercises';
 
-function emptySet(n) { return { set_number: n, reps: '', weight_lbs: '', rpe: '' }; }
+function emptySet(n) { return { set_number: n, reps: '', weight_lbs: '' }; }
 function emptyExercise() { return { exercise_name: '', muscle_group: 'Chest', sets: [emptySet(1)], showPicker: true, search: '' }; }
 
 export default function LogWorkout({ onLogged }) {
@@ -53,7 +53,7 @@ export default function LogWorkout({ onLogged }) {
       if (!ex.exercise_name.trim()) { setError('All exercises need a name'); return; }
       for (const s of ex.sets) {
         if (!s.reps || !s.weight_lbs) { setError('Fill in reps and weight for every set'); return; }
-        allSets.push({ exercise_name: ex.exercise_name.trim(), muscle_group: ex.muscle_group, set_number: s.set_number, reps: Number(s.reps), weight_lbs: Number(s.weight_lbs), rpe: s.rpe ? Number(s.rpe) : null });
+        allSets.push({ exercise_name: ex.exercise_name.trim(), muscle_group: ex.muscle_group, set_number: s.set_number, reps: Number(s.reps), weight_lbs: Number(s.weight_lbs) });
       }
     }
     setLoading(true);
@@ -186,7 +186,7 @@ export default function LogWorkout({ onLogged }) {
             <div className="table-wrap">
               <table>
                 <thead>
-                  <tr><th>Set</th><th>Reps</th><th>Weight (lbs)</th><th>RPE</th><th></th></tr>
+                  <tr><th>Set</th><th>Reps</th><th>Weight (lbs)</th><th></th></tr>
                 </thead>
                 <tbody>
                   {ex.sets.map((s, si) => (
@@ -194,7 +194,6 @@ export default function LogWorkout({ onLogged }) {
                       <td style={{ color: 'var(--cyan)', fontWeight: 700 }}>{s.set_number}</td>
                       <td><input type="number" className="set-input" min="1" value={s.reps} onChange={e => updateSet(ei, si, 'reps', e.target.value)} placeholder="8" /></td>
                       <td><input type="number" className="set-input" style={{ width: 95 }} min="0" step="2.5" value={s.weight_lbs} onChange={e => updateSet(ei, si, 'weight_lbs', e.target.value)} placeholder="135" /></td>
-                      <td><input type="number" className="set-input" min="1" max="10" value={s.rpe} onChange={e => updateSet(ei, si, 'rpe', e.target.value)} placeholder="—" /></td>
                       <td>{ex.sets.length > 1 && <button type="button" className="btn-danger" onClick={() => removeSet(ei, si)}>✕</button>}</td>
                     </tr>
                   ))}
