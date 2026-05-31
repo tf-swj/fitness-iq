@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
-const { logWorkoutSession, logSets, getSessionsForUser, getExerciseHistory, getRecentSessions, getAllExerciseNames } = require('../db/queries');
+const { logWorkoutSession, logSets, getSessionsForUser, getExerciseHistory, getRecentSessions, getAllExerciseNames, getSessionHistory } = require('../db/queries');
+const { estimated1RM } = require('../engine/overload');
 const { runAgentPipeline, getDailyBrief, getPostWorkoutFeedback, streamChat } = require('../agent/pipeline');
 const { runEngine } = require('../engine/overload');
 
@@ -33,6 +34,30 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/sessions',  (req, res) => res.json(getRecentSessions(req.userId, 20)));
+router.get('/history',   (req, res) => res.json(getSessionHistory(req.userId, 40)));
+
+// PR detection — returns exercises where latest session hit an all-time e1RM high
+router.get('/prs', (req, res) => {
+  try {
+    const rows = getSessionsForUser(req.userId, 365);
+    const byExercise = {};
+    for (const r of rows) {
+      const e1rm = estimated1RM(r.weight_lbs, r.reps);
+      if (!byExercise[r.exercise_name]) byExercise[r.exercise_name] = { allTime: 0, latest: { e1rm: 0, date: '' } };
+      const ex = byExercise[r.exercise_name];
+      if (e1rm > ex.allTime) ex.allTime = e1rm;
+    }
+    // Latest session PRs
+    const latestRows = rows.filter(r => r.date === rows[0]?.date);
+    const prs = [];
+    for (const r of latestRows) {
+      const e1rm = estimated1RM(r.weight_lbs, r.reps);
+      const ex = byExercise[r.exercise_name];
+      if (ex && e1rm >= ex.allTime) prs.push({ exercise: r.exercise_name, e1rm });
+    }
+    res.json([...new Map(prs.map(p => [p.exercise, p])).values()]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
 router.get('/exercises', (req, res) => res.json(getAllExerciseNames(req.userId)));
 router.get('/history/:exercise', (req, res) => res.json(getExerciseHistory(req.userId, req.params.exercise)));
 

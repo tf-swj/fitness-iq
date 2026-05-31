@@ -3,8 +3,9 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, CartesianGrid,
 } from 'recharts';
-import { getEngineStats, getExercises, getExerciseHistory, getDailyBrief } from '../api';
+import { getEngineStats, getExercises, getExerciseHistory, getDailyBrief, getPRs } from '../api';
 import { MUSCLE_COLORS } from '../data/exercises';
+import { useCountUp } from '../hooks/useCountUp';
 
 const DarkTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -15,6 +16,12 @@ const DarkTooltip = ({ active, payload, label }) => {
     </div>
   );
 };
+
+function AnimatedStat({ value, prefix = '', suffix = '', decimals = 0 }) {
+  const num = useCountUp(parseFloat(value) || 0, 1200, decimals);
+  if (!value && value !== 0) return <span>—</span>;
+  return <span>{prefix}{decimals > 0 ? num.toFixed(decimals) : Math.round(num)}{suffix}</span>;
+}
 
 function TypingText({ text }) {
   const [displayed, setDisplayed] = useState('');
@@ -39,12 +46,14 @@ export default function Dashboard({ onNavigate }) {
   const [loading, setLoading]       = useState(true);
   const [brief, setBrief]           = useState(null);
   const [briefLoading, setBriefLoading] = useState(false);
+  const [latestPRs, setLatestPRs]   = useState([]);
 
   useEffect(() => {
-    Promise.all([getEngineStats(), getExercises()])
-      .then(([eng, exs]) => {
+    Promise.all([getEngineStats(), getExercises(), getPRs()])
+      .then(([eng, exs, prs]) => {
         setEngine(eng.data);
         setExercises(exs.data);
+        setLatestPRs(prs.data || []);
         if (exs.data.length) setSelectedEx(exs.data[0].exercise_name);
       })
       .finally(() => setLoading(false));
@@ -118,26 +127,45 @@ export default function Dashboard({ onNavigate }) {
         </div>
       </div>
 
+      {/* ── PR Banner ── */}
+      {latestPRs.length > 0 && (
+        <div style={{ background: 'linear-gradient(135deg, rgba(0,212,232,0.1), rgba(0,212,232,0.05))', border: '1px solid var(--cyan-border)', borderRadius: 12, padding: '0.85rem 1.25rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '1.2rem' }}>🏆</span>
+          <span style={{ fontWeight: 700, color: 'var(--cyan)', fontSize: '0.875rem' }}>Personal Records in last session:</span>
+          {latestPRs.map(pr => (
+            <span key={pr.exercise} style={{ background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', borderRadius: 20, padding: '0.2rem 0.65rem', fontSize: '0.78rem', color: 'var(--cyan)', fontWeight: 600 }}>
+              {pr.exercise} — {pr.e1rm} lbs e1RM
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* ── Stat Cards ── */}
       <div className="stat-grid">
         <div className={`stat-card ${engine.plateaus?.length ? '' : 'active-stat'}`}>
           <div className="stat-icon cyan">📈</div>
-          <div className="stat-value cyan">{exercises.length}</div>
+          <div className="stat-value cyan"><AnimatedStat value={exercises.length} /></div>
           <div className="stat-label">Exercises Tracked</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon green">🏆</div>
-          <div className="stat-value" style={{ color: 'var(--green)' }}>{bestGain ? `+${bestGain.percentGain}%` : '—'}</div>
+          <div className="stat-value" style={{ color: 'var(--green)' }}>
+            {bestGain ? <><span style={{ fontSize: '1.2rem' }}>+</span><AnimatedStat value={bestGain.percentGain} decimals={1} suffix="%" /></> : '—'}
+          </div>
           <div className="stat-label">Best Strength Gain</div>
         </div>
         <div className="stat-card" style={engine.plateaus?.length ? { borderColor: 'rgba(255,125,59,0.35)' } : {}}>
           <div className="stat-icon orange">⚡</div>
-          <div className="stat-value" style={{ color: engine.plateaus?.length ? 'var(--orange)' : 'var(--text-primary)' }}>{engine.plateaus?.length || 0}</div>
+          <div className="stat-value" style={{ color: engine.plateaus?.length ? 'var(--orange)' : 'var(--text-primary)' }}>
+            <AnimatedStat value={engine.plateaus?.length || 0} />
+          </div>
           <div className="stat-label">Active Plateaus</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon red">🔥</div>
-          <div className="stat-value">{totalVolume ? `${Math.round(totalVolume / 1000)}k` : '—'}</div>
+          <div className="stat-value">
+            {totalVolume ? <><AnimatedStat value={Math.round(totalVolume / 1000)} />k</> : '—'}
+          </div>
           <div className="stat-label">This Week (lbs)</div>
         </div>
       </div>

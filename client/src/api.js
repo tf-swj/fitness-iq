@@ -20,6 +20,8 @@ export const getSessions = () => api.get('/workouts/sessions');
 export const getExercises = () => api.get('/workouts/exercises');
 export const getExerciseHistory = (name) => api.get(`/workouts/history/${encodeURIComponent(name)}`);
 export const getEngineStats = () => api.get('/workouts/engine');
+export const getHistory = () => api.get('/workouts/history');
+export const getPRs = () => api.get('/workouts/prs');
 export const getDailyBrief = () => api.get('/workouts/daily-brief');
 export const runAnalysis = () => api.post('/workouts/analyze');
 

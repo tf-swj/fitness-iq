@@ -537,7 +537,72 @@ tbody tr:hover td { background: rgba(255,255,255,0.03); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Mobile nav ── */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: var(--navy-800);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+}
+
+.mobile-nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 0.4rem 0;
+  transition: color 0.15s;
+}
+.mobile-nav-item.active { color: var(--cyan); }
+.mobile-nav-icon { font-size: 1.1rem; }
+.mobile-nav-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+
 @media (max-width: 768px) {
   .sidebar { display: none; }
-  .main-wrap { margin-left: 0; }
+  .main-wrap { margin-left: 0; padding-bottom: 64px; }
+  .mobile-nav { display: flex; }
 }
+
+/* ── Light theme ── */
+[data-theme="light"] {
+  --navy-900: #f0f2f5;
+  --navy-800: #ffffff;
+  --navy-700: #f5f7fa;
+  --navy-600: #e8ecf0;
+  --navy-500: #d0d6df;
+  --cyan: #4f46e5;
+  --cyan-dim: rgba(79,70,229,0.08);
+  --cyan-border: rgba(79,70,229,0.25);
+  --cyan-glow: 0 0 20px rgba(79,70,229,0.15);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border: rgba(0,0,0,0.08);
+  --border-bright: rgba(0,0,0,0.14);
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --green: #16a34a;
+  --orange: #ea580c;
+  --red: #dc2626;
+  --shadow: 0 4px 12px rgba(0,0,0,0.07);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+[data-theme="light"] body { background: #f0f2f5; }
+[data-theme="light"] .app { background: #f0f2f5; }
+[data-theme="light"] select option { background: white; color: #0f172a; }
+[data-theme="light"] .ai-box { background: #f8fafc; border-color: rgba(79,70,229,0.2); color: #334155; }
+[data-theme="light"] .retrieved-principle { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+[data-theme="light"] .exercise-block { background: #f8fafc; }
+[data-theme="light"] .picker-panel { background: #f1f5f9; }
+[data-theme="light"] .alert-warn { background: #fff7ed; border-color: #fed7aa; }
+[data-theme="light"] .alert-info { background: #eff6ff; border-color: #bfdbfe; }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { logWorkout } from '../api';
 import { EXERCISE_DB, MUSCLE_GROUPS, MUSCLE_EMOJIS, searchExercises } from '../data/exercises';
+import { WeightChip } from './PlateCalculator';
 
 function emptySet(n) { return { set_number: n, reps: '', weight_lbs: '' }; }
 function emptyExercise() { return { exercise_name: '', muscle_group: 'Chest', sets: [emptySet(1)], showPicker: true, search: '' }; }
@@ -193,7 +194,10 @@ export default function LogWorkout({ onLogged }) {
                     <tr key={si}>
                       <td style={{ color: 'var(--cyan)', fontWeight: 700 }}>{s.set_number}</td>
                       <td><input type="number" className="set-input" min="1" value={s.reps} onChange={e => updateSet(ei, si, 'reps', e.target.value)} placeholder="8" /></td>
-                      <td><input type="number" className="set-input" style={{ width: 95 }} min="0" step="2.5" value={s.weight_lbs} onChange={e => updateSet(ei, si, 'weight_lbs', e.target.value)} placeholder="135" /></td>
+                      <td style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <input type="number" className="set-input" style={{ width: 80 }} min="0" step="2.5" value={s.weight_lbs} onChange={e => updateSet(ei, si, 'weight_lbs', e.target.value)} placeholder="135" />
+                        {s.weight_lbs > 0 && <WeightChip weight={Number(s.weight_lbs)} />}
+                      </td>
                       <td>{ex.sets.length > 1 && <button type="button" className="btn-danger" onClick={() => removeSet(ei, si)}>✕</button>}</td>
                     </tr>
                   ))}

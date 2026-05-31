@@ -84,6 +84,23 @@ function getAllExerciseNames(userId) {
   `).all(userId);
 }
 
+// ── History (sessions with sets) ──
+function getSessionHistory(userId, limit = 30) {
+  const db = getDb();
+  const sessions = db.prepare(`
+    SELECT id, date, notes FROM workout_sessions
+    WHERE user_id = ? ORDER BY date DESC LIMIT ?
+  `).all(userId, limit);
+
+  const setsStmt = db.prepare(`
+    SELECT exercise_name, muscle_group, set_number, reps, weight_lbs
+    FROM exercise_sets WHERE session_id = ?
+    ORDER BY exercise_name, set_number
+  `);
+
+  return sessions.map(s => ({ ...s, sets: setsStmt.all(s.id) }));
+}
+
 // ── Schedule ──
 function getSchedule(userId) {
   return getDb().prepare('SELECT * FROM weekly_schedule WHERE user_id = ? ORDER BY day_index').all(userId);
@@ -104,5 +121,6 @@ function clearScheduleDay(userId, dayIndex) {
 module.exports = {
   createUser, getUserByEmail, getUserById, verifyUserEmail, updateUserProfile,
   logWorkoutSession, logSets, getSessionsForUser, getExerciseHistory, getRecentSessions, getAllExerciseNames,
+  getSessionHistory,
   getSchedule, saveScheduleDay, clearScheduleDay,
 };
