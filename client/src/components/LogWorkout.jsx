@@ -12,6 +12,7 @@ export default function LogWorkout({ onLogged }) {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState('');
   const [pickerMuscle, setPickerMuscle] = useState({});
+  const [aiFeedback, setAiFeedback] = useState(null);
 
   const updateExercise = (ei, field, value) =>
     setExercises(exs => exs.map((ex, i) => i === ei ? { ...ex, [field]: value } : ex));
@@ -57,8 +58,13 @@ export default function LogWorkout({ onLogged }) {
     }
     setLoading(true);
     try {
-      await logWorkout({ date, notes, sets: allSets });
-      onLogged();
+      const r = await logWorkout({ date, notes, sets: allSets, getAiFeedback: true });
+      if (r.data.aiFeedback) {
+        setAiFeedback(r.data.aiFeedback);
+        setTimeout(() => onLogged(), 4000);
+      } else {
+        onLogged();
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to log workout');
       setLoading(false);
@@ -207,6 +213,18 @@ export default function LogWorkout({ onLogged }) {
         </button>
         {error && <span className="error-msg">⚠ {error}</span>}
       </div>
+
+      {/* AI post-workout feedback */}
+      {aiFeedback && (
+        <div style={{ marginTop: '1.25rem', background: 'linear-gradient(135deg, var(--navy-800), #0d2a3a)', border: '1px solid var(--cyan-border)', borderRadius: 14, padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'flex-start', boxShadow: 'var(--cyan-glow)' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'var(--cyan-dim)', border: '1px solid var(--cyan-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', flexShrink: 0 }}>◈</div>
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--cyan)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.4rem' }}>Alex · Post-Workout Feedback</div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{aiFeedback}</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Returning to dashboard in a moment...</div>
+          </div>
+        </div>
+      )}
     </form>
   );
 }
