@@ -140,6 +140,52 @@ export default function Dashboard({ onNavigate }) {
         </div>
       )}
 
+      {/* ── Streak banner ── */}
+      {engine.streaks?.weekStreak > 0 && (
+        <div style={{
+          background: engine.streaks.weekStreak >= 4
+            ? 'linear-gradient(135deg, rgba(249,115,22,0.12), rgba(234,179,8,0.08))'
+            : 'linear-gradient(135deg, rgba(0,212,232,0.08), rgba(0,212,232,0.04))',
+          border: `1px solid ${engine.streaks.weekStreak >= 4 ? 'rgba(249,115,22,0.3)' : 'var(--cyan-border)'}`,
+          borderRadius: 12,
+          padding: '1rem 1.25rem',
+          marginBottom: '1.25rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.75rem',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <div style={{ fontSize: '2rem', lineHeight: 1 }}>
+              {engine.streaks.weekStreak >= 8 ? '🔥' : engine.streaks.weekStreak >= 4 ? '⚡' : '💪'}
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '1.5rem', color: engine.streaks.weekStreak >= 4 ? 'var(--orange)' : 'var(--cyan)', lineHeight: 1, letterSpacing: '-0.5px' }}>
+                {engine.streaks.weekStreak} week{engine.streaks.weekStreak !== 1 ? 's' : ''}
+              </div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '0.1rem' }}>
+                Current Streak
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '1.5rem' }}>
+            {[
+              ['🏅', engine.streaks.longestWeekStreak, 'Best Ever'],
+              ['📅', engine.streaks.totalWorkoutDays, 'Total Days'],
+              ['🗓', engine.streaks.dayStreak, 'Day Streak'],
+            ].map(([icon, val, label]) => (
+              <div key={label} style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{icon} {label}</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '1.1rem', marginTop: '0.1rem' }}>
+                  <AnimatedStat value={val} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Stat Cards ── */}
       <div className="stat-grid">
         <div className={`stat-card ${engine.plateaus?.length ? '' : 'active-stat'}`}>

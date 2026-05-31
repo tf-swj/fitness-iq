@@ -104,6 +104,64 @@ function shouldDeload(rows) {
   return weeks.length >= 4;
 }
 
+// Streak calculation
+function computeStreaks(rows) {
+  if (!rows.length) return { weekStreak: 0, dayStreak: 0, longestWeekStreak: 0, totalWorkoutDays: 0 };
+
+  const today = new Date().toISOString().slice(0, 10);
+  const workoutDates = [...new Set(rows.map(r => r.date))].sort();
+  const totalWorkoutDays = workoutDates.length;
+
+  // ── Day streak: consecutive days ending today or yesterday ──
+  let dayStreak = 0;
+  const dateSet = new Set(workoutDates);
+  let cursor = new Date(today + 'T00:00:00');
+
+  // Allow 1 day grace (streak counts if last workout was yesterday)
+  if (!dateSet.has(today)) cursor.setDate(cursor.getDate() - 1);
+
+  while (dateSet.has(cursor.toISOString().slice(0, 10))) {
+    dayStreak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  // ── Week streak: consecutive weeks with at least 1 workout ──
+  const workoutWeeks = new Set(workoutDates.map(getWeekKey));
+  const currentWeek = getWeekKey(today);
+  const allWeeks = [...workoutWeeks].sort();
+
+  // Count back from current/last week
+  let weekStreak = 0;
+  let longestWeekStreak = 0;
+  let tempStreak = 0;
+  let checkDate = new Date(currentWeek + 'T00:00:00');
+
+  // If no workout this week, start from last week
+  if (!workoutWeeks.has(currentWeek)) checkDate.setDate(checkDate.getDate() - 7);
+
+  while (workoutWeeks.has(checkDate.toISOString().slice(0, 10))) {
+    weekStreak++;
+    checkDate.setDate(checkDate.getDate() - 7);
+  }
+
+  // Longest ever week streak
+  for (let i = 0; i < allWeeks.length; i++) {
+    if (i === 0) { tempStreak = 1; continue; }
+    const prev = new Date(allWeeks[i - 1] + 'T00:00:00');
+    prev.setDate(prev.getDate() + 7);
+    const expected = prev.toISOString().slice(0, 10);
+    if (allWeeks[i] === expected) {
+      tempStreak++;
+    } else {
+      tempStreak = 1;
+    }
+    longestWeekStreak = Math.max(longestWeekStreak, tempStreak);
+  }
+  longestWeekStreak = Math.max(longestWeekStreak, weekStreak);
+
+  return { weekStreak, dayStreak, longestWeekStreak, totalWorkoutDays };
+}
+
 function runEngine(rows) {
   const trends = computeStrengthTrend(rows);
   const { volume, sessionDays } = computeWeeklyVolume(rows);
@@ -111,8 +169,9 @@ function runEngine(rows) {
   const overtraining = detectOvertraining(sessionDays);
   const gains = computeStrengthGains(trends);
   const deloadRecommended = shouldDeload(rows);
+  const streaks = computeStreaks(rows);
 
-  return { trends, volume, sessionDays, plateaus, overtraining, gains, deloadRecommended };
+  return { trends, volume, sessionDays, plateaus, overtraining, gains, deloadRecommended, streaks };
 }
 
 // --- helpers ---
