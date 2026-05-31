@@ -96,7 +96,7 @@ export default function App() {
           <div className="topbar-right">
             {tab === 'Dashboard'   && <span className="badge badge-green">● Live</span>}
             {tab === 'Log Workout' && <span className="badge badge-cyan">+ New Session</span>}
-            {tab === 'AI Coach'    && <span className="badge badge-cyan">◈ Powered by Claude</span>}
+            {tab === 'AI Coach'    && <span className="badge badge-cyan">◈ AI Coach</span>}
             {tab === 'Settings'    && <span className="badge badge-cyan">⚙ Account</span>}
           </div>
         </div>

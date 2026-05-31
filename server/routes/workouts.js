@@ -17,7 +17,7 @@ router.post('/', async (req, res) => {
     logSets(sessionId, sets);
 
     let aiFeedback = null;
-    if (getAiFeedback && process.env.ANTHROPIC_API_KEY) {
+    if (getAiFeedback && process.env.ANTHROPIC_API_KEY?.trim()) {
       try {
         const allRows = getSessionsForUser(req.userId, 90);
         aiFeedback = await getPostWorkoutFeedback(sets, allRows);
@@ -46,7 +46,7 @@ router.get('/daily-brief', async (req, res) => {
   try {
     const rows = getSessionsForUser(req.userId, 90);
     if (!rows.length) return res.json({ text: null });
-    if (!process.env.ANTHROPIC_API_KEY) return res.json({ text: null });
+    if (!process.env.ANTHROPIC_API_KEY?.trim()) return res.json({ text: null });
     const brief = await getDailyBrief(rows);
     res.json(brief);
   } catch (err) {
