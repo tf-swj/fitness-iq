@@ -59,14 +59,6 @@ Pure rule-based logic runs before any LLM call:
 
 ### AI Agent (`server/agent/pipeline.js`)
 
-Three agent modes, all powered by `claude-sonnet-4-5` via OpenRouter:
-
-| Mode | Tokens | Purpose |
-|------|--------|---------|
-| Weekly Analysis | 1024 | Progress summary + next week's adjusted plan |
-| Daily Brief | 200 | 2-sentence coaching note shown on dashboard |
-| Post-Workout | 180 | Immediate session feedback |
-| Streaming Chat | 600 | Real-time conversation with full context |
 
 The system prompt forces the model to always reference specific numbers from the athlete's data, preventing generic responses.
 
@@ -176,11 +168,3 @@ fitness-iq/
 ```
 
 ---
-
-## What I Would Add Next
-
-- **Velocity-based deload detection** — track rep completion time as a fatigue proxy
-- **Program templates** — auto-generate weekly programs (5/3/1, Texas Method) from the engine output
-- **Embeddings-based RAG** — replace keyword scoring with semantic search over a larger literature corpus
-- **Mobile app** — React Native wrapper with offline-first sync
-- **Social layer** — share PRs and streaks, compare strength standards against population data
